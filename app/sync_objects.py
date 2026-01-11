@@ -9,13 +9,22 @@ from kubernetes import client, config
 def patch_traefik_middleware (new_public_ip: str):
     print("==========================================================")
     print("Updating Traefik middleware with new public IP...")
+    
+    ip_list = [new_public_ip]
+
+    additional_ips = os.environ.get('TRAEFIK_MIDDLEWARE_ADDITIONAL_STATIC_IPS')
+    if additional_ips:
+        additional_ips_list = [ip.strip() for ip in additional_ips.split(',')]
+        print(f"Adding additional static IPs to whitelist: {additional_ips_list}")
+        ip_list.extend(additional_ips_list)
+
     config.load_incluster_config()
     api = client.CustomObjectsApi()
     
     patch_body = {
         "spec": {
             "ipAllowList": {
-                "sourceRange": [new_public_ip]
+                "sourceRange": ip_list
             }
         }
     }
